@@ -143,21 +143,51 @@ const htmlContent = `
         .game-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             background: var(--box-bg);
             padding: 10px 14px;
             border-radius: 10px;
             font-size: 0.85rem;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             border: 1px solid var(--border);
         }
 
-        /* Not Alani (0-9 Rakam Tablosu) */
+        /* Gizli Sayım Paneli */
+        .my-secret-box {
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+        .my-secret-code {
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--primary);
+            filter: blur(5px);
+            cursor: pointer;
+            user-select: none;
+            transition: filter 0.2s;
+        }
+        .my-secret-code.revealed {
+            filter: blur(0);
+        }
+        .reveal-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Rakam Not Alma Paneli (0-9) */
         .tracker-section {
             background: var(--box-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 10px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             text-align: center;
         }
         .tracker-title {
@@ -188,9 +218,7 @@ const htmlContent = `
             justify-content: center;
             margin: 0;
             padding: 0;
-            transition: all 0.2s;
         }
-        /* Durum renkleri: 0: Normal, 1: Kesin Var (Yeşil), 2: Kesin Yok (Kırmızı/Üstü çizili) */
         .tracker-btn.state-yes { background: rgba(52, 211, 153, 0.25); border-color: var(--plus-color); color: var(--plus-color); }
         .tracker-btn.state-no { background: rgba(248, 113, 113, 0.2); border-color: var(--minus-color); color: var(--minus-color); text-decoration: line-through; opacity: 0.6; }
 
@@ -340,12 +368,16 @@ const htmlContent = `
                 <span id="opponent-name">Rakip: ...</span>
             </div>
 
+            <!-- Kendi Gizli Sayını Görme Kutusu -->
+            <div class="my-secret-box">
+                <span>Gizli Sayım: <strong id="my-secret-display" class="my-secret-code" title="Görmek için tıkla">----</strong></span>
+                <span class="reveal-hint">(Görmek için üstüne tıkla)</span>
+            </div>
+
             <!-- Rakam Not Alma Paneli (0-9) -->
             <div class="tracker-section">
                 <div class="tracker-title">Rakam Notları (İşaretlemek için tıkla)</div>
-                <div class="tracker-grid" id="tracker-grid">
-                    <!-- Javascript ile 0-9 butonları basılacak -->
-                </div>
+                <div class="tracker-grid" id="tracker-grid"></div>
             </div>
 
             <div class="form-group">
@@ -384,6 +416,7 @@ const htmlContent = `
         let myName = "";
         let currentRoomId = "";
         let isMyTurn = false;
+        let mySecretCode = ""; // Kendi gizli sayımızı saklamak için
 
         // Tema Değiştirme Mantığı
         const themeToggleBtn = document.getElementById('btn-theme-toggle');
@@ -398,6 +431,12 @@ const htmlContent = `
                 htmlElement.setAttribute('data-theme', 'dark');
                 themeToggleBtn.textContent = "☀️ Açık Mod";
             }
+        });
+
+        // Kendi gizli sayısını açıp kapama (blur efektini kaldırma)
+        const mySecretDisplay = document.getElementById('my-secret-display');
+        mySecretDisplay.addEventListener('click', () => {
+            mySecretDisplay.classList.toggle('revealed');
         });
 
         // 0-9 Rakam Not Paneli Oluşturma
@@ -495,6 +534,9 @@ const htmlContent = `
 
         document.getElementById('btn-lock-secret').addEventListener('click', () => {
             const val = secretInput.value.trim();
+            mySecretCode = val; // Kendi sayımızı hafızada tutuyoruz
+            document.getElementById('my-secret-display').textContent = val;
+            
             socket.emit('set-secret', { roomId: currentRoomId, secret: val });
             document.getElementById('setup-subtitle').textContent = "Rakibin gizli sayısını seçmesi bekleniyor...";
             secretInput.disabled = true;
