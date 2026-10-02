@@ -7,10 +7,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Aktif odalar
 const rooms = {};
 
-// Ana sayfada tek dosyalık modern ve mobil uyumlu oyun arayüzünü sunuyoruz
 app.get('/', (req, res) => {
     res.send(`
 <!DOCTYPE html>
@@ -22,17 +20,18 @@ app.get('/', (req, res) => {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #818cf8;
+            --primary-hover: #6366f1;
             --accent: #f43f5e;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
             --success: #10b981;
-            --plus-color: #059669;
-            --minus-color: #dc2626;
+            --plus-color: #34d399;
+            --minus-color: #f87171;
+            --box-bg: #0f172a;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
@@ -49,21 +48,21 @@ app.get('/', (req, res) => {
 
         .container {
             width: 100%;
-            max-width: 480px;
+            max-width: 600px;
             background: var(--card-bg);
             border-radius: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
             padding: 24px;
         }
 
-        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 4px; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 4px; color: var(--text-main); }
         .subtitle { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
 
         .screen { display: none; }
         .screen.active { display: block; }
 
         .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; }
+        label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--text-muted); }
 
         input {
             width: 100%;
@@ -72,6 +71,8 @@ app.get('/', (req, res) => {
             border: 2px solid var(--border);
             border-radius: 12px;
             outline: none;
+            background: var(--box-bg);
+            color: var(--text-main);
             transition: border-color 0.2s;
             text-align: center;
         }
@@ -94,53 +95,105 @@ app.get('/', (req, res) => {
         button:active { transform: scale(0.98); }
 
         .rules-box {
-            background: #f1f5f9;
+            background: var(--box-bg);
             border-radius: 12px;
             padding: 14px;
             font-size: 0.8rem;
             color: var(--text-muted);
             margin-bottom: 20px;
             line-height: 1.5;
+            border: 1px solid var(--border);
         }
         .rules-box ul { padding-left: 16px; margin-top: 4px; }
 
         .error-msg { color: var(--accent); font-size: 0.75rem; margin-top: 4px; text-align: center; min-height: 16px; }
 
-        /* Oyun İçi */
+        /* Oyun Alanı & Bölünmüş Tablolar */
         .game-header {
             display: flex;
             justify-content: space-between;
-            background: #f8fafc;
+            background: var(--box-bg);
             padding: 10px 14px;
             border-radius: 10px;
             font-size: 0.85rem;
             margin-bottom: 16px;
+            border: 1px solid var(--border);
         }
 
-        .history-container {
-            max-height: 200px;
-            overflow-y: auto;
+        .boards-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .board-column {
+            flex: 1;
+            background: var(--box-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 8px;
-            margin-top: 12px;
+            padding: 10px;
+            max-height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .board-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .history-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 10px;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
+            padding: 6px 8px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            font-size: 0.85rem;
         }
-        .history-item:last-child { border-bottom: none; }
 
-        .badge-plus { background: #d1fae5; color: var(--plus-color); padding: 3px 6px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; }
-        .badge-minus { background: #fee2e2; color: var(--minus-color); padding: 3px 6px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; }
+        .badges { display: flex; gap: 4px; }
+        .badge-plus { background: rgba(52, 211, 153, 0.2); color: var(--plus-color); padding: 2px 5px; border-radius: 4px; font-weight: 600; font-size: 0.7rem; }
+        .badge-minus { background: rgba(248, 113, 113, 0.2); color: var(--minus-color); padding: 2px 5px; border-radius: 4px; font-weight: 600; font-size: 0.7rem; }
 
-        .waiting-box { text-align: center; padding: 30px 0; color: var(--text-muted); }
-        .room-link-box { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 0.75rem; word-break: break-all; margin-top: 10px; user-select: all; }
+        .waiting-box { text-align: center; padding: 20px 0; color: var(--text-muted); }
+        .code-share-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .code-display {
+            flex-grow: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            color: var(--primary);
+        }
+        .btn-copy {
+            width: auto;
+            padding: 0 16px;
+            margin-top: 0;
+            background: var(--border);
+        }
+        .btn-copy:hover { background: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -154,55 +207,58 @@ app.get('/', (req, res) => {
             <div class="rules-box">
                 <strong>Oyun Kuralları:</strong>
                 <ul>
-                    <li>Her oyuncu gizli 4 basamaklı, rakamları birbirinden farklı bir sayı belirler.</li>
-                    <li>Sırayla birbirinizin sayısını tahmin etmeye çalışırsınız.</li>
-                    <li>Doğru basamak ve doğru yer: <strong>+1</strong></li>
-                    <li>Doğru rakam ama yanlış yer: <strong>-1</strong></li>
-                    <li>İlk olarak rakibin sayısını tam bulan oyunu kazanır!</li>
+                    <li>Gizli 4 basamaklı, rakamları birbirinden farklı bir sayı belirle.</li>
+                    <li>Sırayla birbirinizin sayısını bulmaya çalışın.</li>
+                    <li>Doğru basamak ve yer: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
+                    <li>İlk bilen oyunu kazanır!</li>
                 </ul>
             </div>
 
             <div class="form-group">
-                <label for="username">Oyuncu Adınız</label>
-                <input type="text" id="username" placeholder="Adınızı girin..." maxlength="15">
+                <label for="username">Oyuncu Adın</label>
+                <input type="text" id="username" placeholder="Adını gir..." maxlength="15">
                 <div id="welcome-error" class="error-msg"></div>
             </div>
 
-            <button id="btn-create-room">Yeni Oda Kur</button>
+            <button id="btn-create-room">Oda Kur</button>
             <div style="text-align: center; margin: 10px 0; font-size: 0.8rem; color: var(--text-muted);">veya</div>
-            <button id="btn-join-toggle" style="background: var(--text-muted);">Odaya Katıl</button>
+            <button id="btn-join-toggle" style="background: var(--border); color: var(--text-main);">Oda Kodu ile Katıl</button>
 
             <div id="join-section" style="display: none; margin-top: 14px;">
-                <input type="text" id="room-code-input" placeholder="Oda Kodunu Girin..." style="margin-bottom: 6px;">
+                <input type="text" id="room-code-input" placeholder="Oda Kodunu Gir..." style="margin-bottom: 6px; text-transform: uppercase;">
                 <button id="btn-join-room" style="background: var(--success);">Oyuna Bağlan</button>
             </div>
         </div>
 
         <!-- 2. RAKAM BELİRLEME EKRANI -->
         <div id="screen-setup" class="screen">
-            <h1>Gizli Sayını Belirle</h1>
-            <p class="subtitle" id="setup-subtitle">Rakibini bekliyorsun...</p>
+            <h1>Gizli Sayını Seç</h1>
+            <p class="subtitle" id="setup-subtitle">Rakibin bekleniyor...</p>
 
             <div class="form-group" style="margin-top: 20px;">
-                <label for="secret-input">4 Basamaklı Gizli Sayın (Rakamları Farklı)</label>
+                <label for="secret-input">4 Basamaklı Gizli Sayın</label>
                 <input type="password" id="secret-input" maxlength="4" placeholder="••••" inputmode="numeric">
                 <div id="setup-error" class="error-msg"></div>
             </div>
             <button id="btn-lock-secret" disabled>Sayımı Kilitle</button>
         </div>
 
-        <!-- 3. BEKLEME EKRANI (Rakip bekleniyor) -->
+        <!-- 3. BEKLEME EKRANI -->
         <div id="screen-waiting" class="screen">
             <div class="waiting-box">
-                <h2>Rakip Bekleniyor...</h2>
-                <p style="margin: 10px 0; font-size: 0.85rem;">Bu bağlantı linkini arkadaşına gönder:</p>
-                <div class="room-link-box" id="share-link-text"></div>
+                <h2>Oda Kuruldu! 🎮</h2>
+                <p style="margin: 10px 0 4px 0; font-size: 0.85rem;">Bu oda kodunu arkadaşına gönder:</p>
+                <div class="code-share-box">
+                    <div class="code-display" id="room-code-text">------</div>
+                    <button class="btn-copy" id="btn-copy-code">Kopyala</button>
+                </div>
+                <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted);">Arkadaşın kodu girip bağlanınca oyun otomatik başlayacak...</p>
             </div>
         </div>
 
         <!-- 4. OYUN EKRANI -->
         <div id="screen-game" class="screen">
-            <h1>Düello Başladı!</h1>
+            <h1>Düello Devam Ediyor</h1>
             <div class="game-header">
                 <span id="turn-indicator">Sıra: ...</span>
                 <span id="opponent-name">Rakip: ...</span>
@@ -214,10 +270,18 @@ app.get('/', (req, res) => {
             </div>
             <button id="btn-make-guess">Tahmin Et</button>
 
-            <div style="margin-top: 14px;">
-                <label style="font-size: 0.8rem; color: var(--text-muted);">Tahmin Geçmişi:</label>
-                <div class="history-container" id="history-list">
-                    <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">Henüz hamle yapılmadı.</div>
+            <div class="boards-container">
+                <div class="board-column">
+                    <div class="board-title">Senin Tahminlerin</div>
+                    <div class="history-list" id="my-history">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">Henüz hamle yok</div>
+                    </div>
+                </div>
+                <div class="board-column">
+                    <div class="board-title" id="opp-board-title">Rakip Tahminleri</div>
+                    <div class="history-list" id="opp-history">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">Henüz hamle yok</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -233,7 +297,6 @@ app.get('/', (req, res) => {
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-
         let myName = "";
         let currentRoomId = "";
         let isMyTurn = false;
@@ -247,23 +310,22 @@ app.get('/', (req, res) => {
         };
 
         function showScreen(name) {
-            Object.values(screens.s || screens).forEach(s => s.classList.remove('active'));
+            Object.values(screens).forEach(s => s.classList.remove('active'));
             screens[name].classList.add('active');
         }
-
-        // URL'de oda kodu varsa otomatik yakala
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const roomParam = urlParams.get('room');
-            if (roomParam) {
-                document.getElementById('room-code-input').value = roomParam;
-                document.getElementById('join-section').style.display = 'block';
-            }
-        };
 
         document.getElementById('btn-join-toggle').addEventListener('click', () => {
             const sec = document.getElementById('join-section');
             sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Kopyalama Butonu
+        document.getElementById('btn-copy-code').addEventListener('click', () => {
+            const code = document.getElementById('room-code-text').textContent;
+            navigator.clipboard.writeText(code);
+            const btn = document.getElementById('btn-copy-code');
+            btn.textContent = "Kopyalandı!";
+            setTimeout(() => btn.textContent = "Kopyala", 2000);
         });
 
         function validateNumber(str) {
@@ -272,26 +334,24 @@ app.get('/', (req, res) => {
             return null;
         }
 
-        // Oda Kur
         document.getElementById('btn-create-room').addEventListener('click', () => {
             myName = document.getElementById('username').value.trim();
             if (!myName) {
-                document.getElementById('welcome-error').textContent = "Lütfen adınızı girin.";
+                document.getElementById('welcome-error').textContent = "Lütfen adını gir.";
                 return;
             }
             socket.emit('create-room', { name: myName });
         });
 
-        // Odaya Katıl
         document.getElementById('btn-join-room').addEventListener('click', () => {
             myName = document.getElementById('username').value.trim();
-            const roomId = document.getElementById('room-code-input').value.trim();
+            const roomId = document.getElementById('room-code-input').value.trim().toUpperCase();
             if (!myName) {
-                document.getElementById('welcome-error').textContent = "Lütfen adınızı girin.";
+                document.getElementById('welcome-error').textContent = "Lütfen adını gir.";
                 return;
             }
             if (!roomId) {
-                alert("Lütfen oda kodu girin.");
+                alert("Lütfen oda kodu gir.");
                 return;
             }
             socket.emit('join-room', { roomId, name: myName });
@@ -299,8 +359,7 @@ app.get('/', (req, res) => {
 
         socket.on('room-created', (roomId) => {
             currentRoomId = roomId;
-            const link = window.location.origin + "/?room=" + roomId;
-            document.getElementById('share-link-text').textContent = link;
+            document.getElementById('room-code-text').textContent = roomId;
             showScreen('waiting');
         });
 
@@ -326,12 +385,13 @@ app.get('/', (req, res) => {
 
         socket.on('start-game', (data) => {
             document.getElementById('opponent-name').textContent = "Rakip: " + data.opponentName;
+            document.getElementById('opp-board-title').textContent = data.opponentName + " Tahminleri";
             showScreen('game');
         });
 
         socket.on('update-turn', (data) => {
             isMyTurn = data.isMyTurn;
-            document.getElementById('turn-indicator').textContent = isMyTurn ? "Sıra Sende! 🎯" : "Rakibin Sırası ⏳";
+            document.getElementById('turn-indicator').textContent = isMyTurn ? "Sıra Sende! 🎯" : "Rakipte ⏳";
             document.getElementById('guess-input').disabled = !isMyTurn;
             document.getElementById('btn-make-guess').disabled = !isMyTurn;
         });
@@ -353,23 +413,26 @@ app.get('/', (req, res) => {
         }
 
         socket.on('guess-result', (data) => {
-            const list = document.getElementById('history-list');
+            const isMe = data.playerName === myName;
+            const listId = isMe ? 'my-history' : 'opp-history';
+            const list = document.getElementById(listId);
+
             if(list.innerHTML.includes('Henüz hamle')) list.innerHTML = '';
             
-            list.innerHTML = \`
+            list.innerHTML = `
                 <div class="history-item">
-                    <span><strong>\${data.playerName}</strong>: \${data.guess}</span>
-                    <div>
+                    <span><strong>\${data.guess}</strong></span>
+                    <div class="badges">
                         <span class="badge-plus">+\${data.plus}</span>
                         <span class="badge-minus">-\${data.minus}</span>
                     </div>
                 </div>
-            \` + list.innerHTML;
+            ` + list.innerHTML;
         });
 
         socket.on('game-over', (data) => {
             document.getElementById('win-title').textContent = data.winner === myName ? "Kazandın! 🎉" : "Kaybettin! 😢";
-            document.getElementById('win-desc').textContent = \`\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!\`;
+            document.getElementById('win-desc').textContent = `\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!`;
             showScreen('win');
         });
 
@@ -382,10 +445,9 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Socket.io Oyun Akış Mantığı
 io.on('connection', (socket) => {
     socket.on('create-room', ({ name }) => {
-        const roomId = uuidv4().substring(0, 6);
+        const roomId = uuidv4().substring(0, 5).toUpperCase();
         rooms[roomId] = {
             id: roomId,
             players: [{ id: socket.id, name, secret: null }],
@@ -410,7 +472,6 @@ io.on('connection', (socket) => {
         room.players.push({ id: socket.id, name, secret: null });
         socket.join(roomId);
 
-        // Her iki oyuncuya da kurulum ekranını başlat
         io.to(roomId).emit('start-setup', { roomId });
     });
 
@@ -421,11 +482,9 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.id === socket.id);
         if (player) player.secret = secret;
 
-        // İki oyuncu da gizli sayısını seçti mi kontrol et
         if (room.players.length === 2 && room.players.every(p => p.secret)) {
             room.status = 'playing';
             
-            // Oyunu başlat ve ilk sırayı belirle
             room.players.forEach((p, idx) => {
                 const opponent = room.players[1 - idx];
                 io.to(p.id).emit('start-game', { opponentName: opponent.name });
@@ -439,7 +498,7 @@ io.on('connection', (socket) => {
         if (!room || room.status !== 'playing') return;
 
         const playerIndex = room.players.findIndex(p => p.id === socket.id);
-        if (playerIndex !== room.turnIndex) return; // Sıra onda değilse işlem yapma
+        if (playerIndex !== room.turnIndex) return;
 
         const opponent = room.players[1 - playerIndex];
         const secretCode = opponent.secret;
@@ -455,7 +514,6 @@ io.on('connection', (socket) => {
             }
         }
 
-        // Tahmin sonucunu odadaki herkese bildir
         io.to(roomId).emit('guess-result', {
             playerName: room.players[playerIndex].name,
             guess,
@@ -463,7 +521,6 @@ io.on('connection', (socket) => {
             minus
         });
 
-        // Kazanma durumu kontrolü
         if (plus === 4) {
             io.to(roomId).emit('game-over', {
                 winner: room.players[playerIndex].name,
@@ -473,7 +530,6 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Sırayı diğer oyuncuya devret
         room.turnIndex = 1 - room.turnIndex;
         room.players.forEach((p, idx) => {
             io.to(p.id).emit('update-turn', { isMyTurn: room.turnIndex === idx });
@@ -481,7 +537,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        // Oyuncu çıkarsa odaları temizleyebiliriz
         for (const roomId in rooms) {
             rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== socket.id);
             if (rooms[roomId].players.length === 0) {
