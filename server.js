@@ -9,8 +9,7 @@ const io = new Server(server);
 
 const rooms = {};
 
-app.get('/', (req, res) => {
-    res.send(`
+const htmlContent = `
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -108,7 +107,6 @@ app.get('/', (req, res) => {
 
         .error-msg { color: var(--accent); font-size: 0.75rem; margin-top: 4px; text-align: center; min-height: 16px; }
 
-        /* Oyun Alanı & Bölünmüş Tablolar */
         .game-header {
             display: flex;
             justify-content: space-between;
@@ -319,7 +317,6 @@ app.get('/', (req, res) => {
             sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
         });
 
-        // Kopyalama Butonu
         document.getElementById('btn-copy-code').addEventListener('click', () => {
             const code = document.getElementById('room-code-text').textContent;
             navigator.clipboard.writeText(code);
@@ -419,7 +416,7 @@ app.get('/', (req, res) => {
 
             if(list.innerHTML.includes('Henüz hamle')) list.innerHTML = '';
             
-            list.innerHTML = `
+            list.innerHTML = \`
                 <div class="history-item">
                     <span><strong>\${data.guess}</strong></span>
                     <div class="badges">
@@ -427,12 +424,12 @@ app.get('/', (req, res) => {
                         <span class="badge-minus">-\${data.minus}</span>
                     </div>
                 </div>
-            ` + list.innerHTML;
+            \` + list.innerHTML;
         });
 
         socket.on('game-over', (data) => {
             document.getElementById('win-title').textContent = data.winner === myName ? "Kazandın! 🎉" : "Kaybettin! 😢";
-            document.getElementById('win-desc').textContent = `\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!`;
+            document.getElementById('win-desc').textContent = \`\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!\`;
             showScreen('win');
         });
 
@@ -442,7 +439,10 @@ app.get('/', (req, res) => {
     </script>
 </body>
 </html>
-    `);
+`;
+
+app.get('/', (req, res) => {
+    res.send(htmlContent);
 });
 
 io.on('connection', (socket) => {
