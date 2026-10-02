@@ -11,14 +11,14 @@ const rooms = {};
 
 const htmlContent = `
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Çevrimiçi Sayı Tahmin Oyunu</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
+        :root[data-theme="dark"] {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --primary: #818cf8;
@@ -31,9 +31,26 @@ const htmlContent = `
             --plus-color: #34d399;
             --minus-color: #f87171;
             --box-bg: #0f172a;
+            --history-bg: #1e293b;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        :root[data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #e11d48;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --plus-color: #059669;
+            --minus-color: #dc2626;
+            --box-bg: #f8fafc;
+            --history-bg: #f8fafc;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; transition: background 0.3s, color 0.3s, border-color 0.3s; }
 
         body {
             background-color: var(--bg-color);
@@ -47,12 +64,30 @@ const htmlContent = `
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 620px;
             background: var(--card-bg);
             border-radius: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
             padding: 24px;
+            position: relative;
         }
+
+        .theme-toggle {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+        }
+        .theme-toggle:hover { background: var(--border); }
 
         h1 { font-size: 1.5rem; text-align: center; margin-bottom: 4px; color: var(--text-main); }
         .subtitle { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
@@ -72,7 +107,6 @@ const htmlContent = `
             outline: none;
             background: var(--box-bg);
             color: var(--text-main);
-            transition: border-color 0.2s;
             text-align: center;
         }
         input:focus { border-color: var(--primary); }
@@ -87,7 +121,6 @@ const htmlContent = `
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
             margin-top: 6px;
         }
         button:hover { background-color: var(--primary-hover); }
@@ -114,14 +147,56 @@ const htmlContent = `
             padding: 10px 14px;
             border-radius: 10px;
             font-size: 0.85rem;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             border: 1px solid var(--border);
         }
 
+        /* Not Alani (0-9 Rakam Tablosu) */
+        .tracker-section {
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .tracker-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .tracker-grid {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .tracker-btn {
+            width: 32px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            transition: all 0.2s;
+        }
+        /* Durum renkleri: 0: Normal, 1: Kesin Var (Yeşil), 2: Kesin Yok (Kırmızı/Üstü çizili) */
+        .tracker-btn.state-yes { background: rgba(52, 211, 153, 0.25); border-color: var(--plus-color); color: var(--plus-color); }
+        .tracker-btn.state-no { background: rgba(248, 113, 113, 0.2); border-color: var(--minus-color); color: var(--minus-color); text-decoration: line-through; opacity: 0.6; }
+
         .boards-container {
             display: flex;
-            gap: 12px;
-            margin-top: 14px;
+            gap: 10px;
         }
 
         .board-column {
@@ -130,7 +205,7 @@ const htmlContent = `
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 10px;
-            max-height: 220px;
+            max-height: 180px;
             display: flex;
             flex-direction: column;
         }
@@ -140,9 +215,8 @@ const htmlContent = `
             font-weight: 600;
             text-align: center;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .history-list {
@@ -157,8 +231,9 @@ const htmlContent = `
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 8px;
-            background: var(--card-bg);
+            padding: 5px 8px;
+            background: var(--history-bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 0.85rem;
         }
@@ -175,7 +250,7 @@ const htmlContent = `
         }
         .code-display {
             flex-grow: 1;
-            background: var(--card-bg);
+            background: var(--box-bg);
             border: 1px solid var(--border);
             padding: 10px;
             border-radius: 8px;
@@ -190,13 +265,16 @@ const htmlContent = `
             padding: 0 16px;
             margin-top: 0;
             background: var(--border);
+            color: var(--text-main);
         }
-        .btn-copy:hover { background: var(--text-muted); }
+        .btn-copy:hover { background: var(--text-muted); color: white; }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <button class="theme-toggle" id="btn-theme-toggle">☀️ Açık Mod</button>
+
         <!-- 1. GİRİŞ EKRANI -->
         <div id="screen-welcome" class="screen active">
             <h1>Sayı Tahmin Oyunu</h1>
@@ -262,6 +340,14 @@ const htmlContent = `
                 <span id="opponent-name">Rakip: ...</span>
             </div>
 
+            <!-- Rakam Not Alma Paneli (0-9) -->
+            <div class="tracker-section">
+                <div class="tracker-title">Rakam Notları (İşaretlemek için tıkla)</div>
+                <div class="tracker-grid" id="tracker-grid">
+                    <!-- Javascript ile 0-9 butonları basılacak -->
+                </div>
+            </div>
+
             <div class="form-group">
                 <input type="text" id="guess-input" maxlength="4" placeholder="4 basamaklı tahminin..." inputmode="numeric">
                 <div id="game-error" class="error-msg"></div>
@@ -272,13 +358,13 @@ const htmlContent = `
                 <div class="board-column">
                     <div class="board-title">Senin Tahminlerin</div>
                     <div class="history-list" id="my-history">
-                        <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">Henüz hamle yok</div>
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>
                     </div>
                 </div>
                 <div class="board-column">
                     <div class="board-title" id="opp-board-title">Rakip Tahminleri</div>
                     <div class="history-list" id="opp-history">
-                        <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; padding: 10px;">Henüz hamle yok</div>
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>
                     </div>
                 </div>
             </div>
@@ -298,6 +384,41 @@ const htmlContent = `
         let myName = "";
         let currentRoomId = "";
         let isMyTurn = false;
+
+        // Tema Değiştirme Mantığı
+        const themeToggleBtn = document.getElementById('btn-theme-toggle');
+        const htmlElement = document.documentElement;
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                htmlElement.setAttribute('data-theme', 'light');
+                themeToggleBtn.textContent = "🌙 Koyu Mod";
+            } else {
+                htmlElement.setAttribute('data-theme', 'dark');
+                themeToggleBtn.textContent = "☀️ Açık Mod";
+            }
+        });
+
+        // 0-9 Rakam Not Paneli Oluşturma
+        const trackerGrid = document.getElementById('tracker-grid');
+        for (let i = 0; i <= 9; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'tracker-btn';
+            btn.textContent = i;
+            btn.dataset.state = '0'; // 0: Normal, 1: Kesin Var, 2: Kesin Yok
+            
+            btn.addEventListener('click', () => {
+                let state = parseInt(btn.dataset.state);
+                state = (state + 1) % 3;
+                btn.dataset.state = state;
+                
+                btn.className = 'tracker-btn';
+                if (state === 1) btn.classList.add('state-yes');
+                if (state === 2) btn.classList.add('state-no');
+            });
+            trackerGrid.appendChild(btn);
+        }
 
         const screens = {
             welcome: document.getElementById('screen-welcome'),
