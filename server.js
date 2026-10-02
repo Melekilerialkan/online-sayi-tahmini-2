@@ -313,7 +313,7 @@ const htmlContent = `
                 <ul>
                     <li>Gizli 4 basamaklı, rakamları birbirinden farklı bir sayı belirle.</li>
                     <li>Sırayla birbirinizin sayısını bulmaya çalışın.</li>
-                    <li>Doğru basamak ve yer: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
+                    <li>Doğru basamak ve sayı: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
                     <li>İlk bilen oyunu kazanır!</li>
                 </ul>
             </div>
