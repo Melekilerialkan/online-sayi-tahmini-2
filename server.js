@@ -108,6 +108,7 @@ const htmlContent = `
             background: var(--box-bg);
             color: var(--text-main);
             text-align: center;
+            letter-spacing: 2px;
         }
         input:focus { border-color: var(--primary); }
 
@@ -152,7 +153,6 @@ const htmlContent = `
             border: 1px solid var(--border);
         }
 
-        /* Gizli Sayım Paneli */
         .my-secret-box {
             background: var(--box-bg);
             border: 1px solid var(--border);
@@ -173,15 +173,9 @@ const htmlContent = `
             user-select: none;
             transition: filter 0.2s;
         }
-        .my-secret-code.revealed {
-            filter: blur(0);
-        }
-        .reveal-hint {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
+        .my-secret-code.revealed { filter: blur(0); }
+        .reveal-hint { font-size: 0.7rem; color: var(--text-muted); }
 
-        /* Rakam Not Alma Paneli (0-9) */
         .tracker-section {
             background: var(--box-bg);
             border: 1px solid var(--border);
@@ -313,7 +307,7 @@ const htmlContent = `
                 <ul>
                     <li>Gizli 4 basamaklı, rakamları birbirinden farklı bir sayı belirle.</li>
                     <li>Sırayla birbirinizin sayısını bulmaya çalışın.</li>
-                    <li>Doğru basamak ve sayı: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
+                    <li>Doğru basamak ve yer: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
                     <li>İlk bilen oyunu kazanır!</li>
                 </ul>
             </div>
@@ -334,14 +328,14 @@ const htmlContent = `
             </div>
         </div>
 
-        <!-- 2. RAKAM BELİRLEME EKRANI -->
+        <!-- 2. RAKAM BELİRLEME EKRANI (Normal Görünür) -->
         <div id="screen-setup" class="screen">
             <h1>Gizli Sayını Seç</h1>
             <p class="subtitle" id="setup-subtitle">Rakibin bekleniyor...</p>
 
             <div class="form-group" style="margin-top: 20px;">
                 <label for="secret-input">4 Basamaklı Gizli Sayın</label>
-                <input type="password" id="secret-input" maxlength="4" placeholder="••••" inputmode="numeric">
+                <input type="text" id="secret-input" maxlength="4" placeholder="Örn: 1234" inputmode="numeric">
                 <div id="setup-error" class="error-msg"></div>
             </div>
             <button id="btn-lock-secret" disabled>Sayımı Kilitle</button>
@@ -402,11 +396,12 @@ const htmlContent = `
             </div>
         </div>
 
-        <!-- 5. BİTİŞ EKRANI -->
+        <!-- 5. BİTİŞ EKRANI (Rövanş Destekli) -->
         <div id="screen-win" class="screen" style="text-align: center; padding: 20px 0;">
             <h2 id="win-title" style="font-size: 1.75rem; color: var(--success); margin-bottom: 8px;">Oyun Bitti!</h2>
             <p id="win-desc" style="color: var(--text-muted); margin-bottom: 20px;"></p>
-            <button onclick="location.reload()">Yeniden Oyna</button>
+            <button id="btn-rematch" style="background-color: var(--success);">Rövanş İste (Yeniden Oyna)</button>
+            <button onclick="location.reload()" style="background-color: var(--border); color: var(--text-main); margin-top: 8px;">Ana Sayfaya Dön</button>
         </div>
     </div>
 
@@ -415,10 +410,8 @@ const htmlContent = `
         const socket = io();
         let myName = "";
         let currentRoomId = "";
-        let isMyTurn = false;
-        let mySecretCode = ""; // Kendi gizli sayımızı saklamak için
+        let isMyTrustTurn = false;
 
-        // Tema Değiştirme Mantığı
         const themeToggleBtn = document.getElementById('btn-theme-toggle');
         const htmlElement = document.documentElement;
 
@@ -433,19 +426,17 @@ const htmlContent = `
             }
         });
 
-        // Kendi gizli sayısını açıp kapama (blur efektini kaldırma)
         const mySecretDisplay = document.getElementById('my-secret-display');
         mySecretDisplay.addEventListener('click', () => {
             mySecretDisplay.classList.toggle('revealed');
         });
 
-        // 0-9 Rakam Not Paneli Oluşturma
         const trackerGrid = document.getElementById('tracker-grid');
         for (let i = 0; i <= 9; i++) {
             const btn = document.createElement('button');
             btn.className = 'tracker-btn';
             btn.textContent = i;
-            btn.dataset.state = '0'; // 0: Normal, 1: Kesin Var, 2: Kesin Yok
+            btn.dataset.state = '0';
             
             btn.addEventListener('click', () => {
                 let state = parseInt(btn.dataset.state);
@@ -522,6 +513,21 @@ const htmlContent = `
 
         socket.on('start-setup', (data) => {
             currentRoomId = data.roomId;
+            // Sıfırlama
+            document.getElementById('secret-input').value = "";
+            document.getElementById('secret-input').disabled = false;
+            document.getElementById('btn-lock-secret').style.display = 'block';
+            document.getElementById('btn-lock-secret').disabled = true;
+            document.getElementById('setup-subtitle').textContent = "Rakibin bekleniyor...";
+            document.getElementById('my-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>';
+            document.getElementById('opp-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>';
+            
+            // Notları sıfırla
+            document.querySelectorAll('.tracker-btn').forEach(b => {
+                b.dataset.state = '0';
+                b.className = 'tracker-btn';
+            });
+
             showScreen('setup');
         });
 
@@ -534,7 +540,7 @@ const htmlContent = `
 
         document.getElementById('btn-lock-secret').addEventListener('click', () => {
             const val = secretInput.value.trim();
-            mySecretCode = val; // Kendi sayımızı hafızada tutuyoruz
+            mySecretCode = val;
             document.getElementById('my-secret-display').textContent = val;
             
             socket.emit('set-secret', { roomId: currentRoomId, secret: val });
@@ -593,7 +599,18 @@ const htmlContent = `
         socket.on('game-over', (data) => {
             document.getElementById('win-title').textContent = data.winner === myName ? "Kazandın! 🎉" : "Kaybettin! 😢";
             document.getElementById('win-desc').textContent = \`\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!\`;
+            
+            const rematchBtn = document.getElementById('btn-rematch');
+            rematchBtn.textContent = "Rövanş İste (Yeniden Oyna)";
+            rematchBtn.disabled = false;
+            
             showScreen('win');
+        });
+
+        document.getElementById('btn-rematch').addEventListener('click', () => {
+            document.getElementById('btn-rematch').textContent = "Rakip bekleniyor...";
+            document.getElementById('btn-rematch').disabled = true;
+            socket.emit('request-rematch', { roomId: currentRoomId });
         });
 
         socket.on('error-msg', (msg) => {
@@ -697,6 +714,19 @@ io.on('connection', (socket) => {
         room.players.forEach((p, idx) => {
             io.to(p.id).emit('update-turn', { isMyTurn: room.turnIndex === idx });
         });
+    });
+
+    socket.on('request-rematch', ({ roomId }) => {
+        const room = rooms[roomId];
+        if (!room) return;
+
+        // Gizli sayıları sıfırla
+        room.players.forEach(p => p.secret = null);
+        room.turnIndex = 0;
+        room.status = 'setup';
+
+        // Her iki oyuncuyu tekrar sayı seçme ekranına gönder
+        io.to(roomId).emit('start-setup', { roomId });
     });
 
     socket.on('disconnect', () => {
