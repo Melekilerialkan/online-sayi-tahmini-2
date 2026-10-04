@@ -70,6 +70,7 @@ const htmlContent = `
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
             padding: 24px;
             position: relative;
+            overflow: hidden;
         }
 
         .theme-toggle {
@@ -86,6 +87,7 @@ const htmlContent = `
             cursor: pointer;
             width: auto;
             margin: 0;
+            z-index: 10;
         }
         .theme-toggle:hover { background: var(--border); }
 
@@ -98,7 +100,7 @@ const htmlContent = `
         .form-group { margin-bottom: 16px; }
         label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--text-muted); }
 
-        input {
+        input, select {
             width: 100%;
             padding: 12px 16px;
             font-size: 1rem;
@@ -110,7 +112,7 @@ const htmlContent = `
             text-align: center;
             letter-spacing: 2px;
         }
-        input:focus { border-color: var(--primary); }
+        input:focus, select:focus { border-color: var(--primary); }
 
         button {
             width: 100%;
@@ -126,6 +128,7 @@ const htmlContent = `
         }
         button:hover { background-color: var(--primary-hover); }
         button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .rules-box {
             background: var(--box-bg);
@@ -149,9 +152,23 @@ const htmlContent = `
             padding: 10px 14px;
             border-radius: 10px;
             font-size: 0.85rem;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             border: 1px solid var(--border);
         }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .score-item { flex: 1; }
+        .score-val { font-weight: 700; color: var(--primary); }
 
         .my-secret-box {
             background: var(--box-bg);
@@ -162,7 +179,7 @@ const htmlContent = `
             justify-content: space-between;
             align-items: center;
             font-size: 0.85rem;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .my-secret-code {
             font-weight: 700;
@@ -176,36 +193,70 @@ const htmlContent = `
         .my-secret-code.revealed { filter: blur(0); }
         .reveal-hint { font-size: 0.7rem; color: var(--text-muted); }
 
+        .emoji-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .emoji-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--box-bg);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+        .emoji-btn:hover { background: var(--border); transform: scale(1.1); }
+
+        #floating-emoji {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 6rem;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        #floating-emoji.show { transform: translate(-50%, -50%) scale(1); }
+
         .tracker-section {
             background: var(--box-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 10px;
-            margin-bottom: 12px;
+            padding: 8px;
+            margin-bottom: 10px;
             text-align: center;
         }
         .tracker-title {
             font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             text-transform: uppercase;
         }
         .tracker-grid {
             display: flex;
             justify-content: center;
-            gap: 6px;
+            gap: 5px;
             flex-wrap: wrap;
         }
         .tracker-btn {
-            width: 32px;
-            height: 36px;
-            border-radius: 8px;
+            width: 28px;
+            height: 32px;
+            border-radius: 6px;
             border: 1px solid var(--border);
             background: var(--card-bg);
             color: var(--text-main);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -226,8 +277,8 @@ const htmlContent = `
             background: var(--box-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 10px;
-            max-height: 180px;
+            padding: 8px;
+            max-height: 150px;
             display: flex;
             flex-direction: column;
         }
@@ -237,7 +288,7 @@ const htmlContent = `
             font-weight: 600;
             text-align: center;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             text-transform: uppercase;
         }
 
@@ -246,23 +297,23 @@ const htmlContent = `
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .history-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 8px;
+            padding: 4px 6px;
             background: var(--history-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.85rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
 
-        .badges { display: flex; gap: 4px; }
-        .badge-plus { background: rgba(52, 211, 153, 0.2); color: var(--plus-color); padding: 2px 5px; border-radius: 4px; font-weight: 600; font-size: 0.7rem; }
-        .badge-minus { background: rgba(248, 113, 113, 0.2); color: var(--minus-color); padding: 2px 5px; border-radius: 4px; font-weight: 600; font-size: 0.7rem; }
+        .badges { display: flex; gap: 3px; }
+        .badge-plus { background: rgba(52, 211, 153, 0.2); color: var(--plus-color); padding: 2px 4px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; }
+        .badge-minus { background: rgba(248, 113, 113, 0.2); color: var(--minus-color); padding: 2px 4px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; }
 
         .waiting-box { text-align: center; padding: 20px 0; color: var(--text-muted); }
         .code-share-box {
@@ -295,6 +346,7 @@ const htmlContent = `
 <body>
 
     <div class="container">
+        <div id="floating-emoji">🔥</div>
         <button class="theme-toggle" id="btn-theme-toggle">☀️ Açık Mod</button>
 
         <!-- 1. GİRİŞ EKRANI -->
@@ -305,16 +357,23 @@ const htmlContent = `
             <div class="rules-box">
                 <strong>Oyun Kuralları:</strong>
                 <ul>
-                    <li>Gizli 4 basamaklı, rakamları birbirinden farklı bir sayı belirle.</li>
-                    <li>Sırayla birbirinizin sayısını bulmaya çalışın.</li>
-                    <li>Doğru basamak ve yer: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
-                    <li>İlk bilen oyunu kazanır!</li>
+                    <li>Seçtiğin moda göre 3 veya 4 basamaklı, rakamları farklı sayı belirle.</li>
+                    <li>Sayı <strong>0 ile başlayabilir</strong>.</li>
+                    <li>Doğru yer: <strong>+1</strong> | Yanlış yer: <strong>-1</strong></li>
                 </ul>
             </div>
 
             <div class="form-group">
                 <label for="username">Oyuncu Adın</label>
                 <input type="text" id="username" placeholder="Adını gir..." maxlength="15">
+            </div>
+
+            <div class="form-group">
+                <label for="digit-select">Mod Seçimi</label>
+                <select id="digit-select">
+                    <option value="4">4 Basamaklı Klasik</option>
+                    <option value="3">3 Basamaklı Hızlı Mod</option>
+                </select>
                 <div id="welcome-error" class="error-msg"></div>
             </div>
 
@@ -328,14 +387,14 @@ const htmlContent = `
             </div>
         </div>
 
-        <!-- 2. RAKAM BELİRLEME EKRANI (Normal Görünür) -->
+        <!-- 2. RAKAM BELİRLEME EKRANI -->
         <div id="screen-setup" class="screen">
             <h1>Gizli Sayını Seç</h1>
             <p class="subtitle" id="setup-subtitle">Rakibin bekleniyor...</p>
 
             <div class="form-group" style="margin-top: 20px;">
-                <label for="secret-input">4 Basamaklı Gizli Sayın</label>
-                <input type="text" id="secret-input" maxlength="4" placeholder="Örn: 1234" inputmode="numeric">
+                <label id="setup-label" for="secret-input">Gizli Sayın</label>
+                <input type="text" id="secret-input" maxlength="4" placeholder="Örn: 0123" inputmode="numeric">
                 <div id="setup-error" class="error-msg"></div>
             </div>
             <button id="btn-lock-secret" disabled>Sayımı Kilitle</button>
@@ -362,20 +421,35 @@ const htmlContent = `
                 <span id="opponent-name">Rakip: ...</span>
             </div>
 
+            <!-- Skor ve Seri Tablosu -->
+            <div class="score-board">
+                <div class="score-item">Skor: <span id="my-score" class="score-val">0</span> - <span id="opp-score" class="score-val">0</span></div>
+                <div class="score-item">Galibiyet Serisi: <span id="my-streak" class="score-val">0</span></div>
+            </div>
+
             <!-- Kendi Gizli Sayını Görme Kutusu -->
             <div class="my-secret-box">
                 <span>Gizli Sayım: <strong id="my-secret-display" class="my-secret-code" title="Görmek için tıkla">----</strong></span>
                 <span class="reveal-hint">(Görmek için üstüne tıkla)</span>
             </div>
 
+            <!-- Hızlı Emoji Tepkileri -->
+            <div class="emoji-bar">
+                <button class="emoji-btn" onclick="sendEmoji('🔥')">🔥</button>
+                <button class="emoji-btn" onclick="sendEmoji('😱')">😱</button>
+                <button class="emoji-btn" onclick="sendEmoji('👏')">👏</button>
+                <button class="emoji-btn" onclick="sendEmoji('😂')">😂</button>
+                <button class="emoji-btn" onclick="sendEmoji('🎯')">🎯</button>
+            </div>
+
             <!-- Rakam Not Alma Paneli (0-9) -->
             <div class="tracker-section">
-                <div class="tracker-title">Rakam Notları (İşaretlemek için tıkla)</div>
+                <div class="tracker-title">Rakam Notları</div>
                 <div class="tracker-grid" id="tracker-grid"></div>
             </div>
 
             <div class="form-group">
-                <input type="text" id="guess-input" maxlength="4" placeholder="4 basamaklı tahminin..." inputmode="numeric">
+                <input type="text" id="guess-input" maxlength="4" placeholder="Tahminin..." inputmode="numeric">
                 <div id="game-error" class="error-msg"></div>
             </div>
             <button id="btn-make-guess">Tahmin Et</button>
@@ -384,19 +458,19 @@ const htmlContent = `
                 <div class="board-column">
                     <div class="board-title">Senin Tahminlerin</div>
                     <div class="history-list" id="my-history">
-                        <div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Hamle yok</div>
                     </div>
                 </div>
                 <div class="board-column">
                     <div class="board-title" id="opp-board-title">Rakip Tahminleri</div>
                     <div class="history-list" id="opp-history">
-                        <div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Hamle yok</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 5. BİTİŞ EKRANI (Rövanş Destekli) -->
+        <!-- 5. BİTİŞ EKRANI -->
         <div id="screen-win" class="screen" style="text-align: center; padding: 20px 0;">
             <h2 id="win-title" style="font-size: 1.75rem; color: var(--success); margin-bottom: 8px;">Oyun Bitti!</h2>
             <p id="win-desc" style="color: var(--text-muted); margin-bottom: 20px;"></p>
@@ -410,7 +484,8 @@ const htmlContent = `
         const socket = io();
         let myName = "";
         let currentRoomId = "";
-        let isMyTrustTurn = false;
+        let isMyTurn = false;
+        let digitCount = 4;
 
         const themeToggleBtn = document.getElementById('btn-theme-toggle');
         const htmlElement = document.documentElement;
@@ -434,6 +509,7 @@ const htmlContent = `
         const trackerGrid = document.getElementById('tracker-grid');
         for (let i = 0; i <= 9; i++) {
             const btn = document.createElement('button');
+            btn.type = 'button';
             btn.className = 'tracker-btn';
             btn.textContent = i;
             btn.dataset.state = '0';
@@ -449,6 +525,17 @@ const htmlContent = `
             });
             trackerGrid.appendChild(btn);
         }
+
+        function sendEmoji(emoji) {
+            socket.emit('send-emoji', { roomId: currentRoomId, emoji });
+        }
+
+        socket.on('show-emoji', (emoji) => {
+            const f = document.getElementById('floating-emoji');
+            f.textContent = emoji;
+            f.classList.add('show');
+            setTimeout(() => f.classList.remove('show'), 1000);
+        });
 
         const screens = {
             welcome: document.getElementById('screen-welcome'),
@@ -476,19 +563,21 @@ const htmlContent = `
             setTimeout(() => btn.textContent = "Kopyala", 2000);
         });
 
-        function validateNumber(str) {
-            if (!/^\\d{4}$/.test(str)) return "Sayı tam 4 basamaklı olmalıdır.";
-            if (new Set(str.split('')).size !== 4) return "Rakamlar birbirinden farklı olmalıdır.";
+        function validateNumber(str, len) {
+            const regex = new RegExp(`^\\d{${len}}$`);
+            if (!regex.test(str)) return `Sayı tam ${len} basamaklı olmalıdır.`;
+            if (new Set(str.split('')).size !== len) return "Rakamlar birbirinden farklı olmalıdır.";
             return null;
         }
 
         document.getElementById('btn-create-room').addEventListener('click', () => {
             myName = document.getElementById('username').value.trim();
+            digitCount = parseInt(document.getElementById('digit-select').value);
             if (!myName) {
                 document.getElementById('welcome-error').textContent = "Lütfen adını gir.";
                 return;
             }
-            socket.emit('create-room', { name: myName });
+            socket.emit('create-room', { name: myName, digits: digitCount });
         });
 
         document.getElementById('btn-join-room').addEventListener('click', () => {
@@ -505,24 +594,34 @@ const htmlContent = `
             socket.emit('join-room', { roomId, name: myName });
         });
 
-        socket.on('room-created', (roomId) => {
-            currentRoomId = roomId;
-            document.getElementById('room-code-text').textContent = roomId;
+        socket.on('room-created', (data) => {
+            currentRoomId = data.roomId;
+            digitCount = data.digits;
+            document.getElementById('room-code-text').textContent = data.roomId;
             showScreen('waiting');
         });
 
         socket.on('start-setup', (data) => {
             currentRoomId = data.roomId;
-            // Sıfırlama
-            document.getElementById('secret-input').value = "";
-            document.getElementById('secret-input').disabled = false;
+            digitCount = data.digits;
+            
+            const secretInput = document.getElementById('secret-input');
+            secretInput.maxLength = digitCount;
+            secretInput.placeholder = digitCount === 3 ? "Örn: 012" : "Örn: 0123";
+            document.getElementById('setup-label').textContent = `${digitCount} Basamaklı Gizli Sayın (0 ile başlayabilir)`;
+            
+            secretInput.value = "";
+            secretInput.disabled = false;
             document.getElementById('btn-lock-secret').style.display = 'block';
             document.getElementById('btn-lock-secret').disabled = true;
             document.getElementById('setup-subtitle').textContent = "Rakibin bekleniyor...";
-            document.getElementById('my-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>';
-            document.getElementById('opp-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Henüz hamle yok</div>';
             
-            // Notları sıfırla
+            document.getElementById('guess-input').maxLength = digitCount;
+            document.getElementById('guess-input').placeholder = `${digitCount} basamaklı tahminin...`;
+            
+            document.getElementById('my-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Hamle yok</div>';
+            document.getElementById('opp-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Hamle yok</div>';
+            
             document.querySelectorAll('.tracker-btn').forEach(b => {
                 b.dataset.state = '0';
                 b.className = 'tracker-btn';
@@ -533,15 +632,15 @@ const htmlContent = `
 
         const secretInput = document.getElementById('secret-input');
         secretInput.addEventListener('input', () => {
-            const err = validateNumber(secretInput.value.trim());
+            const err = validateNumber(secretInput.value.trim(), digitCount);
             document.getElementById('setup-error').textContent = err || "";
             document.getElementById('btn-lock-secret').disabled = !!err;
         });
 
         document.getElementById('btn-lock-secret').addEventListener('click', () => {
             const val = secretInput.value.trim();
-            mySecretCode = val;
             document.getElementById('my-secret-display').textContent = val;
+            document.getElementById('my-secret-display').classList.remove('revealed');
             
             socket.emit('set-secret', { roomId: currentRoomId, secret: val });
             document.getElementById('setup-subtitle').textContent = "Rakibin gizli sayısını seçmesi bekleniyor...";
@@ -552,6 +651,9 @@ const htmlContent = `
         socket.on('start-game', (data) => {
             document.getElementById('opponent-name').textContent = "Rakip: " + data.opponentName;
             document.getElementById('opp-board-title').textContent = data.opponentName + " Tahminleri";
+            document.getElementById('my-score').textContent = data.myScore;
+            document.getElementById('opp-score').textContent = data.oppScore;
+            document.getElementById('my-streak').textContent = data.myStreak;
             showScreen('game');
         });
 
@@ -568,7 +670,7 @@ const htmlContent = `
         function makeGuess() {
             if (!isMyTurn) return;
             const val = document.getElementById('guess-input').value.trim();
-            const err = validateNumber(val);
+            const err = validateNumber(val, digitCount);
             if (err) {
                 document.getElementById('game-error').textContent = err;
                 return;
@@ -583,22 +685,22 @@ const htmlContent = `
             const listId = isMe ? 'my-history' : 'opp-history';
             const list = document.getElementById(listId);
 
-            if(list.innerHTML.includes('Henüz hamle')) list.innerHTML = '';
+            if(list.innerHTML.includes('Hamle yok')) list.innerHTML = '';
             
-            list.innerHTML = \`
+            list.innerHTML = `
                 <div class="history-item">
-                    <span><strong>\${data.guess}</strong></span>
+                    <span><strong>${data.guess}</strong></span>
                     <div class="badges">
-                        <span class="badge-plus">+\${data.plus}</span>
-                        <span class="badge-minus">-\${data.minus}</span>
+                        <span class="badge-plus">+${data.plus}</span>
+                        <span class="badge-minus">-${data.minus}</span>
                     </div>
                 </div>
-            \` + list.innerHTML;
+            ` + list.innerHTML;
         });
 
         socket.on('game-over', (data) => {
             document.getElementById('win-title').textContent = data.winner === myName ? "Kazandın! 🎉" : "Kaybettin! 😢";
-            document.getElementById('win-desc').textContent = \`\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!\`;
+            document.getElementById('win-desc').textContent = `${data.winner} rakibin gizli sayısını (${data.secret}) doğru tahmin etti!`;
             
             const rematchBtn = document.getElementById('btn-rematch');
             rematchBtn.textContent = "Rövanş İste (Yeniden Oyna)";
@@ -626,16 +728,19 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    socket.on('create-room', ({ name }) => {
+    socket.on('create-room', ({ name, digits }) => {
         const roomId = uuidv4().substring(0, 5).toUpperCase();
         rooms[roomId] = {
             id: roomId,
-            players: [{ id: socket.id, name, secret: null }],
+            digits: digits || 4,
+            players: [
+                { id: socket.id, name, secret: null, score: 0, streak: 0 }
+            ],
             turnIndex: 0,
             status: 'setup'
         };
         socket.join(roomId);
-        socket.emit('room-created', roomId);
+        socket.emit('room-created', { roomId, digits: rooms[roomId].digits });
     });
 
     socket.on('join-room', ({ roomId, name }) => {
@@ -649,10 +754,10 @@ io.on('connection', (socket) => {
             return;
         }
 
-        room.players.push({ id: socket.id, name, secret: null });
+        room.players.push({ id: socket.id, name, secret: null, score: 0, streak: 0 });
         socket.join(roomId);
 
-        io.to(roomId).emit('start-setup', { roomId });
+        io.to(roomId).emit('start-setup', { roomId, digits: room.digits });
     });
 
     socket.on('set-secret', ({ roomId, secret }) => {
@@ -667,7 +772,12 @@ io.on('connection', (socket) => {
             
             room.players.forEach((p, idx) => {
                 const opponent = room.players[1 - idx];
-                io.to(p.id).emit('start-game', { opponentName: opponent.name });
+                io.to(p.id).emit('start-game', {
+                    opponentName: opponent.name,
+                    myScore: p.score,
+                    oppScore: opponent.score,
+                    myStreak: p.streak
+                });
                 io.to(p.id).emit('update-turn', { isMyTurn: room.turnIndex === idx });
             });
         }
@@ -686,7 +796,7 @@ io.on('connection', (socket) => {
         let plus = 0;
         let minus = 0;
 
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < room.digits; i++) {
             if (guess[i] === secretCode[i]) {
                 plus++;
             } else if (secretCode.includes(guess[i])) {
@@ -701,7 +811,11 @@ io.on('connection', (socket) => {
             minus
         });
 
-        if (plus === 4) {
+        if (plus === room.digits) {
+            room.players[playerIndex].score++;
+            room.players[playerIndex].streak++;
+            room.players[1 - playerIndex].streak = 0;
+
             io.to(roomId).emit('game-over', {
                 winner: room.players[playerIndex].name,
                 secret: secretCode
@@ -716,17 +830,19 @@ io.on('connection', (socket) => {
         });
     });
 
+    socket.on('send-emoji', ({ roomId, emoji }) => {
+        socket.to(roomId).emit('show-emoji', emoji);
+    });
+
     socket.on('request-rematch', ({ roomId }) => {
         const room = rooms[roomId];
         if (!room) return;
 
-        // Gizli sayıları sıfırla
         room.players.forEach(p => p.secret = null);
         room.turnIndex = 0;
         room.status = 'setup';
 
-        // Her iki oyuncuyu tekrar sayı seçme ekranına gönder
-        io.to(roomId).emit('start-setup', { roomId });
+        io.to(roomId).emit('start-setup', { roomId, digits: room.digits });
     });
 
     socket.on('disconnect', () => {
