@@ -564,8 +564,7 @@ const htmlContent = `
         });
 
         function validateNumber(str, len) {
-            const regex = new RegExp(`^\\d{${len}}$`);
-            if (!regex.test(str)) return `Sayı tam ${len} basamaklı olmalıdır.`;
+            if (str.length !== len || !/^\\d+$/.test(str)) return \`Sayı tam \${len} basamaklı olmalıdır.\`;
             if (new Set(str.split('')).size !== len) return "Rakamlar birbirinden farklı olmalıdır.";
             return null;
         }
@@ -608,7 +607,7 @@ const htmlContent = `
             const secretInput = document.getElementById('secret-input');
             secretInput.maxLength = digitCount;
             secretInput.placeholder = digitCount === 3 ? "Örn: 012" : "Örn: 0123";
-            document.getElementById('setup-label').textContent = `${digitCount} Basamaklı Gizli Sayın (0 ile başlayabilir)`;
+            document.getElementById('setup-label').textContent = \`\${digitCount} Basamaklı Gizli Sayın (0 ile başlayabilir)\`;
             
             secretInput.value = "";
             secretInput.disabled = false;
@@ -617,7 +616,7 @@ const htmlContent = `
             document.getElementById('setup-subtitle').textContent = "Rakibin bekleniyor...";
             
             document.getElementById('guess-input').maxLength = digitCount;
-            document.getElementById('guess-input').placeholder = `${digitCount} basamaklı tahminin...`;
+            document.getElementById('guess-input').placeholder = \`\${digitCount} basamaklı tahminin...\`;
             
             document.getElementById('my-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Hamle yok</div>';
             document.getElementById('opp-history').innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.7rem; padding: 10px;">Hamle yok</div>';
@@ -687,20 +686,20 @@ const htmlContent = `
 
             if(list.innerHTML.includes('Hamle yok')) list.innerHTML = '';
             
-            list.innerHTML = `
+            list.innerHTML = \`
                 <div class="history-item">
-                    <span><strong>${data.guess}</strong></span>
+                    <span><strong>\${data.guess}</strong></span>
                     <div class="badges">
-                        <span class="badge-plus">+${data.plus}</span>
-                        <span class="badge-minus">-${data.minus}</span>
+                        <span class="badge-plus">+\${data.plus}</span>
+                        <span class="badge-minus">-\${data.minus}</span>
                     </div>
                 </div>
-            ` + list.innerHTML;
+            \` + list.innerHTML;
         });
 
         socket.on('game-over', (data) => {
             document.getElementById('win-title').textContent = data.winner === myName ? "Kazandın! 🎉" : "Kaybettin! 😢";
-            document.getElementById('win-desc').textContent = `${data.winner} rakibin gizli sayısını (${data.secret}) doğru tahmin etti!`;
+            document.getElementById('win-desc').textContent = \`\${data.winner} rakibin gizli sayısını (\${data.secret}) doğru tahmin etti!\`;
             
             const rematchBtn = document.getElementById('btn-rematch');
             rematchBtn.textContent = "Rövanş İste (Yeniden Oyna)";
